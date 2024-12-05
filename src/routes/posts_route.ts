@@ -4,14 +4,14 @@ import postsController from "../controllers/posts_controller";
 
 
 
-router.get("/", postsController.getAllPosts);
+router.get("/", postsController.getAll.bind(postsController));
 
 router.get("/:id", (req, res) => {
-    postsController.getPostById(req, res);
+    postsController.getById(req, res);
 });
 
-router.post("/", postsController.createPost);
+router.post("/", postsController.create.bind(postsController));
 
-router.delete("/:id", postsController.deletePost);
+router.delete("/:id", postsController.deleteItem.bind(postsController));
 
 export default router;
