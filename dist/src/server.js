@@ -19,12 +19,16 @@ dotenv_1.default.config();
 const mongoose_1 = __importDefault(require("mongoose"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const posts_route_1 = __importDefault(require("./routes/posts_route"));
+const comments_route_1 = __importDefault(require("./routes/comments_route"));
+const auth_route_1 = __importDefault(require("./routes/auth_route"));
 const db = mongoose_1.default.connection;
 db.on("error", (error) => console.error(error));
 db.once("open", () => console.log("Connected to Database"));
 app.use(body_parser_1.default.json());
 app.use(body_parser_1.default.urlencoded({ extended: true }));
 app.use("/posts", posts_route_1.default);
+app.use("/comments", comments_route_1.default);
+app.use("/auth", auth_route_1.default);
 app.get("/about", (req, res) => {
     res.send("Hello World!");
 });
