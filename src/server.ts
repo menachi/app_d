@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 import bodyParser from "body-parser";
 import postsRoute from "./routes/posts_route";
 import commentsRoute from "./routes/comments_route";
+import authController from "./routes/auth_route";
 
 const db = mongoose.connection;
 db.on("error", (error) => console.error(error));
@@ -16,6 +17,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use("/posts", postsRoute);
 app.use("/comments", commentsRoute);
+app.use("/auth", authController);
 
 app.get("/about", (req, res) => {
   res.send("Hello World!");

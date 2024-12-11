@@ -29,3 +29,12 @@ Content-Type: application/json
 DELETE http://localhost:3000/posts/6734d959d9d641367d22f61f
 
 
+###
+
+POST http://localhost:3000/auth/login
+Content-Type: application/json
+
+{
+    "email": "safasdfas",
+    "password": "dasfasdf",
+}
