@@ -12,6 +12,6 @@ router.get("/:id", (req, res) => {
     posts_controller_1.default.getById(req, res);
 });
 router.post("/", auth_controller_1.authMiddleware, posts_controller_1.default.create.bind(posts_controller_1.default));
-router.delete("/:id", posts_controller_1.default.deleteItem.bind(posts_controller_1.default));
+router.delete("/:id", auth_controller_1.authMiddleware, posts_controller_1.default.deleteItem.bind(posts_controller_1.default));
 exports.default = router;
 //# sourceMappingURL=posts_route.js.map
