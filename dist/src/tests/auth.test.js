@@ -52,11 +52,13 @@ describe("Auth Test", () => {
     test("Test login", () => __awaiter(void 0, void 0, void 0, function* () {
         const response = yield (0, supertest_1.default)(app).post("/auth/login").send(testUser);
         expect(response.statusCode).toBe(200);
-        testUser.token = response.body.token;
-        expect(testUser.token).toBeDefined();
-        console.log("Token: ", testUser.token);
+        testUser.accessToken = response.body.accessToken;
+        testUser.refreshToken = response.body.refreshToken;
+        expect(testUser.accessToken).toBeDefined();
+        expect(testUser.refreshToken).toBeDefined();
+        testUser._id = response.body._id;
     }));
-    test("Test login", () => __awaiter(void 0, void 0, void 0, function* () {
+    test("Test login fail", () => __awaiter(void 0, void 0, void 0, function* () {
         const response = yield (0, supertest_1.default)(app).post("/auth/login").send({
             email: testUser.email,
             password: "wrongpassword",
@@ -72,13 +74,77 @@ describe("Auth Test", () => {
         const response = yield (0, supertest_1.default)(app).post("/posts").send(testPosts[0]);
         expect(response.statusCode).not.toBe(201);
         const response2 = yield (0, supertest_1.default)(app).post("/posts")
-            .set({ authorization: "JWT " + testUser.token })
+            .set({ authorization: "JWT " + testUser.accessToken })
             .send(testPosts[0]);
         expect(response2.statusCode).toBe(201);
         const response3 = yield (0, supertest_1.default)(app).post("/posts")
-            .set({ authorization: "JWT " + testUser.token + 'f' })
+            .set({ authorization: "JWT " + testUser.accessToken + 'f' })
             .send(testPosts[0]);
         expect(response3.statusCode).not.toBe(201);
+    }));
+    test("Test refresh token", () => __awaiter(void 0, void 0, void 0, function* () {
+        const response = yield (0, supertest_1.default)(app).post("/auth/refresh").send({
+            refreshToken: testUser.refreshToken,
+        });
+        expect(response.statusCode).toBe(200);
+        testUser.accessToken = response.body.accessToken;
+        testUser.refreshToken = response.body.refreshToken;
+        expect(testUser.accessToken).toBeDefined();
+        expect(testUser.refreshToken).toBeDefined();
+    }));
+    test("Test refresh token fail", () => __awaiter(void 0, void 0, void 0, function* () {
+        const response = yield (0, supertest_1.default)(app).post("/auth/refresh").send({
+            refreshToken: testUser.refreshToken,
+        });
+        expect(response.statusCode).toBe(200);
+        const newRefreshToken = response.body.refreshToken;
+        const response2 = yield (0, supertest_1.default)(app).post("/auth/refresh").send({
+            refreshToken: testUser.refreshToken,
+        });
+        expect(response2.statusCode).not.toBe(200);
+        const response3 = yield (0, supertest_1.default)(app).post("/auth/refresh").send({
+            refreshToken: newRefreshToken,
+        });
+        expect(response3.statusCode).not.toBe(200);
+    }));
+    test("Test logout", () => __awaiter(void 0, void 0, void 0, function* () {
+        const response = yield (0, supertest_1.default)(app).post("/auth/login").send(testUser);
+        testUser.accessToken = response.body.accessToken;
+        testUser.refreshToken = response.body.refreshToken;
+        const response2 = yield (0, supertest_1.default)(app).post("/auth/logout").send({
+            refreshToken: testUser.refreshToken,
+        });
+        expect(response2.statusCode).toBe(200);
+        const response3 = yield (0, supertest_1.default)(app).post("/auth/refresh").send({
+            refreshToken: testUser.refreshToken,
+        });
+        expect(response3.statusCode).not.toBe(200);
+    }));
+    test("Test distinct tokens", () => __awaiter(void 0, void 0, void 0, function* () {
+        const response = yield (0, supertest_1.default)(app).post("/auth/login").send(testUser);
+        testUser.accessToken = response.body.accessToken;
+        testUser.refreshToken = response.body.refreshToken;
+        const response2 = yield (0, supertest_1.default)(app).post("/auth/login").send(testUser);
+        expect(response2.statusCode).toBe(200);
+        expect(response2.body.refreshToken).not.toEqual(testUser.refreshToken);
+    }));
+    jest.setTimeout(10000);
+    test("Token expired", () => __awaiter(void 0, void 0, void 0, function* () {
+        yield new Promise((resolve) => setTimeout(resolve, 5000));
+        const response = yield (0, supertest_1.default)(app).post("/posts")
+            .set({ authorization: "JWT " + testUser.accessToken })
+            .send(testPosts[0]);
+        expect(response.statusCode).not.toBe(201);
+        const response2 = yield (0, supertest_1.default)(app).post("/auth/refresh").send({
+            refreshToken: testUser.refreshToken,
+        });
+        expect(response2.statusCode).toBe(200);
+        testUser.accessToken = response2.body.accessToken;
+        testUser.refreshToken = response2.body.refreshToken;
+        const response3 = yield (0, supertest_1.default)(app).post("/posts")
+            .set({ authorization: "JWT " + testUser.accessToken })
+            .send(testPosts[0]);
+        expect(response3.statusCode).toBe(201);
     }));
 });
 //# sourceMappingURL=auth.test.js.map

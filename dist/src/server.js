@@ -21,6 +21,8 @@ const body_parser_1 = __importDefault(require("body-parser"));
 const posts_route_1 = __importDefault(require("./routes/posts_route"));
 const comments_route_1 = __importDefault(require("./routes/comments_route"));
 const auth_route_1 = __importDefault(require("./routes/auth_route"));
+const swagger_jsdoc_1 = __importDefault(require("swagger-jsdoc"));
+const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
 const db = mongoose_1.default.connection;
 db.on("error", (error) => console.error(error));
 db.once("open", () => console.log("Connected to Database"));
@@ -32,6 +34,20 @@ app.use("/auth", auth_route_1.default);
 app.get("/about", (req, res) => {
     res.send("Hello World!");
 });
+const options = {
+    definition: {
+        openapi: "3.0.0",
+        info: {
+            title: "Web Dev 2025 - D - REST API",
+            version: "1.0.0",
+            description: "REST server including authentication using JWT",
+        },
+        servers: [{ url: "http://localhost:" + process.env.PORT, },],
+    },
+    apis: ["./src/routes/*.ts"],
+};
+const specs = (0, swagger_jsdoc_1.default)(options);
+app.use("/api-docs", swagger_ui_express_1.default.serve, swagger_ui_express_1.default.setup(specs));
 const initApp = () => {
     return new Promise((resolve, reject) => __awaiter(void 0, void 0, void 0, function* () {
         if (process.env.DB_CONNECTION == undefined) {

@@ -30,6 +30,28 @@ const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         res.status(400).send("wrong email or password");
     }
 });
+const generateTokens = (user) => {
+    if (!process.env.TOKEN_SECRET) {
+        return null;
+    }
+    const random = Math.random().toString();
+    const accessToken = jsonwebtoken_1.default.sign({
+        _id: user._id,
+        random: random
+    }, process.env.TOKEN_SECRET, { expiresIn: process.env.TOKEN_EXPIRE });
+    const refreshToken = jsonwebtoken_1.default.sign({
+        _id: user._id,
+        random: random
+    }, process.env.TOKEN_SECRET, { expiresIn: process.env.REFRESH_TOKEN_EXPIRE });
+    if (user.refreshToken == null) {
+        user.refreshToken = [];
+    }
+    user.refreshToken.push(refreshToken);
+    return {
+        accessToken: accessToken,
+        refreshToken: refreshToken
+    };
+};
 const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         //verify user & password
@@ -43,16 +65,91 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             res.status(400).send("wrong email or password");
             return;
         }
-        if (!process.env.TOKEN_SECRET) {
-            res.status(400).send("Server Error");
+        //generate tokens
+        const tokens = generateTokens(user);
+        if (!tokens) {
+            res.status(400).send("Access Denied");
             return;
         }
-        //generate token
-        const token = jsonwebtoken_1.default.sign({ _id: user._id }, process.env.TOKEN_SECRET, { expiresIn: process.env.TOKEN_EXPIRE });
-        res.status(200).send({ token: token, _id: user._id });
+        yield user.save();
+        res.status(200).send({
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            _id: user._id
+        });
     }
     catch (err) {
         res.status(400).send("wrong email or password");
+    }
+});
+const verifyAccessToken = (refreshToken) => {
+    return new Promise((resolve, reject) => {
+        if (!refreshToken) {
+            reject("Access Denied");
+            return;
+        }
+        if (!process.env.TOKEN_SECRET) {
+            reject("Server Error");
+            return;
+        }
+        jsonwebtoken_1.default.verify(refreshToken, process.env.TOKEN_SECRET, (err, payload) => __awaiter(void 0, void 0, void 0, function* () {
+            if (err) {
+                reject("Access Denied");
+                return;
+            }
+            const userId = payload._id;
+            try {
+                const user = yield user_model_1.default.findById(userId);
+                if (!user) {
+                    reject("Access Denied");
+                    return;
+                }
+                if (!user.refreshToken || !user.refreshToken.includes(refreshToken)) {
+                    user.refreshToken = [];
+                    yield user.save();
+                    reject("Access Denied");
+                    return;
+                }
+                user.refreshToken = user.refreshToken.filter((token) => token !== refreshToken);
+                resolve(user);
+            }
+            catch (err) {
+                reject("Access Denied");
+                return;
+            }
+        }));
+    });
+};
+const logout = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const user = yield verifyAccessToken(req.body.refreshToken);
+        yield user.save();
+        res.status(200).send("Logged out");
+    }
+    catch (err) {
+        res.status(400).send("Access Denied");
+        return;
+    }
+});
+const refresh = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const user = yield verifyAccessToken(req.body.refreshToken);
+        //generate new tokens
+        const tokens = generateTokens(user);
+        yield user.save();
+        if (!tokens) {
+            res.status(400).send("Access Denied");
+            return;
+        }
+        //send response
+        res.status(200).send({
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken
+        });
+    }
+    catch (err) {
+        res.status(400).send("Access Denied");
+        return;
     }
 });
 const authMiddleware = (req, res, next) => {
@@ -77,5 +174,10 @@ const authMiddleware = (req, res, next) => {
     });
 };
 exports.authMiddleware = authMiddleware;
-exports.default = { register, login };
+exports.default = {
+    register,
+    login,
+    logout,
+    refresh
+};
 //# sourceMappingURL=auth_controller.js.map
