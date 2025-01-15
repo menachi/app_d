@@ -6,7 +6,8 @@ import mongoose from "mongoose";
 import bodyParser from "body-parser";
 import postsRoute from "./routes/posts_route";
 import commentsRoute from "./routes/comments_route";
-import authController from "./routes/auth_route";
+import authRoute from "./routes/auth_route";
+import fileRoute from "./routes/file_route";
 import swaggerJsDoc from "swagger-jsdoc";
 import swaggerUI from "swagger-ui-express";
 
@@ -22,13 +23,22 @@ app.use((req, res, next) => {
   res.header("Access-Control-Allow-Headers", "*");
   next();
 });
+// app.use(async (req, res, next) => {
+//   await new Promise((resolve) => setTimeout(resolve, 3000));
+//   next();
+// });
 app.use("/posts", postsRoute);
 app.use("/comments", commentsRoute);
-app.use("/auth", authController);
+app.use("/auth", authRoute);
+app.use("/file", fileRoute);
 
 app.get("/about", (req, res) => {
   res.send("Hello World!");
 });
+
+app.use("/public", express.static("public"));
+app.use("/storage", express.static("storage"));
+app.use(express.static("front"));
 
 const options = {
   definition: {
