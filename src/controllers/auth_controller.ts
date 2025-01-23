@@ -8,9 +8,11 @@ const register = async (req: Request, res: Response) => {
     try {
         const password = req.body.password;
         const hashedPassword = await bcrypt.hash(password, 10);
+        if (!req.body.avatar) req.body.avatar = null
         const user = await userModel.create({
             email: req.body.email,
-            password: hashedPassword
+            password: hashedPassword,
+            avatar: req.body.avatar
         });
         res.status(200).send(user);
     } catch (err) {
