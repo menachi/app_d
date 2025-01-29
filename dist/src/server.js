@@ -21,6 +21,7 @@ const body_parser_1 = __importDefault(require("body-parser"));
 const posts_route_1 = __importDefault(require("./routes/posts_route"));
 const comments_route_1 = __importDefault(require("./routes/comments_route"));
 const auth_route_1 = __importDefault(require("./routes/auth_route"));
+const file_route_1 = __importDefault(require("./routes/file_route"));
 const swagger_jsdoc_1 = __importDefault(require("swagger-jsdoc"));
 const swagger_ui_express_1 = __importDefault(require("swagger-ui-express"));
 const db = mongoose_1.default.connection;
@@ -28,12 +29,26 @@ db.on("error", (error) => console.error(error));
 db.once("open", () => console.log("Connected to Database"));
 app.use(body_parser_1.default.json());
 app.use(body_parser_1.default.urlencoded({ extended: true }));
+app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "*");
+    res.header("Access-Control-Allow-Headers", "*");
+    next();
+});
+// app.use(async (req, res, next) => {
+//   await new Promise((resolve) => setTimeout(resolve, 3000));
+//   next();
+// });
 app.use("/posts", posts_route_1.default);
 app.use("/comments", comments_route_1.default);
 app.use("/auth", auth_route_1.default);
+app.use("/file", file_route_1.default);
 app.get("/about", (req, res) => {
     res.send("Hello World!");
 });
+app.use("/public", express_1.default.static("public"));
+app.use("/storage", express_1.default.static("storage"));
+app.use(express_1.default.static("front"));
 const options = {
     definition: {
         openapi: "3.0.0",
@@ -42,7 +57,9 @@ const options = {
             version: "1.0.0",
             description: "REST server including authentication using JWT",
         },
-        servers: [{ url: "http://localhost:" + process.env.PORT, },],
+        servers: [{ url: "http://localhost:" + process.env.PORT, },
+            { url: "http://10.10.248.100", },
+            { url: "https://10.10.248.100", }],
     },
     apis: ["./src/routes/*.ts"],
 };

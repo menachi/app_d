@@ -19,6 +19,9 @@ const userSchema = new Schema({
         type: [String],
         default: [],
     },
+    avatar: {
+        type: String,
+    },
 });
 const userModel = mongoose_1.default.model("Users", userSchema);
 exports.default = userModel;

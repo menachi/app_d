@@ -20,9 +20,12 @@ const register = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const password = req.body.password;
         const hashedPassword = yield bcrypt_1.default.hash(password, 10);
+        if (!req.body.avatar)
+            req.body.avatar = null;
         const user = yield user_model_1.default.create({
             email: req.body.email,
-            password: hashedPassword
+            password: hashedPassword,
+            avatar: req.body.avatar
         });
         res.status(200).send(user);
     }
